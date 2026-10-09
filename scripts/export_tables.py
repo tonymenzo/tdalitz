@@ -2,6 +2,8 @@
 
 Needs ROOT and a Laura++ build; set TDALITZ_LAURA_LIB to the library path.
 Tables are written to tables/<key>.npz (not version-controlled).
+
+    TDALITZ_LAURA_LIB=... python scripts/export_tables.py [channel ...]
 """
 
 import os
@@ -24,7 +26,9 @@ def main():
     lib = os.environ["TDALITZ_LAURA_LIB"]
     out = REPO / "tables"
     out.mkdir(exist_ok=True)
-    for key, ch in CHANNELS.items():
+    keys = sys.argv[1:] or list(CHANNELS)   # Laura++ keeps barrier radii process-wide:
+    for key in keys:                        # export one channel per process when they differ
+        ch = CHANNELS[key]
         t0 = time.perf_counter()
         print(f"[{key}] exporting {len(ch.model.resonances)} components on "
               f"{N_POINTS:,} points", flush=True)
