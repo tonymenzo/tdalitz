@@ -5,7 +5,7 @@ Each reference channel was checked against the exact expectations computed from 
 | check | result |
 | --- | --- |
 | amplitude tables against Laura++ (50k points per channel, $A$ and $\bar A$) | agree to $\leq 4\times10^{-14}$, i.e. to rounding |
-| Dalitz maps, mass projections, decay-time distributions and tag asymmetries (51 $\chi^2$ comparisons over the four channels) | $p$-values consistent with uniform (Kolmogorov–Smirnov $p = 0.26$) |
+| Dalitz maps, mass projections, decay-time distributions and tag asymmetries (51 $\chi^2$ comparisons over the four channels) | $p$-values consistent with uniform: Kolmogorov–Smirnov $p = 0.02$, $0.37$, $0.44$ and $0.84$ for four independent seeds |
 | decay-time resolution ($B_s^0$, $\sigma_t = 45$ fs, test phase $\arg(q/p) = -0.4$) | measured damping $0.728 \pm 0.016$, expected $0.726$ |
 | mistag ($B^0$, $\omega = 0.2$) | asymmetry dilution as expected ($p = 0.47$) |
 

@@ -50,11 +50,13 @@ def test_resonances_sit_in_the_pair_their_charge_requires(key):
 
 @pytest.mark.parametrize("key", ["d0", "b0", "bs"])
 def test_coefficients_cover_the_model_and_reproduce_fit_fraction_ratios(key):
-    """With unit-integral components, FF_r / FF_s = |c_r|^2 / |c_s|^2 exactly."""
+    """With unit-integral components, FF_r / FF_s = (|c_r|^2 + |cbar_r|^2) / (...)_s
+    exactly (BaBar's definition, which reduces to |c_r|^2 / |c_s|^2 when |cbar| = |c|)."""
     ch = CHANNELS[key]
     assert set(ch.coefficients) == set(ch.model.component_names)
     names = list(ch.fit_fractions)
-    mags2 = np.array([ch.coefficients[n].magnitude ** 2 for n in names])
+    mags2 = np.array([abs(ch.coefficients[n].c) ** 2 + abs(ch.coefficients[n].c_bar) ** 2
+                      for n in names])
     ff = np.array([ch.fit_fractions[n] for n in names])
     assert np.allclose(mags2 / mags2.sum(), ff / ff.sum())
 
@@ -216,3 +218,118 @@ def test_b0_3pi_reproduces_the_babar_charge_asymmetry():
     plus = _isolated_band_cp_parameters(table, CHANNELS["b0_3pi"], "rho+(770)")["U+"]
     minus = _isolated_band_cp_parameters(table, CHANNELS["b0_3pi"], "rho-(770)")["U+"]
     assert (plus - minus) / (plus + minus) == pytest.approx((up - um) / (up + um), abs=2e-3)
+
+
+# ------------------------------------------------------- B0 -> KS pi+ pi- (BaBar 2009)
+#: BaBar arXiv:0905.3615, Table IV, Solution I: (|c|, arg c [deg], |cbar|, arg cbar [deg]);
+#: cbar includes q/p.  Table V: fit fractions in percent.
+BABAR_B0 = {
+    "f_0(980)": (4.0, 0.0, 3.7, -73.9), "rho0(770)": (0.10, 35.6, 0.11, 15.3),
+    "K*+(892)": (0.154, -138.7, 0.125, 163.1), "K*+_0(1430)": (6.9, -151.7, 7.6, 136.2),
+    "f_2(1270)": (0.014, 5.8, 0.011, -24.0), "f_0(1370)": (1.41, 43.2, 1.24, 31.6),
+    "NonReson": (2.6, 35.3, 2.7, 36.1), "chi_c0": (0.33, 61.4, 0.44, 15.1),
+}
+BABAR_B0_FF = {"f_0(980)": 13.8, "rho0(770)": 8.6, "K*+(892)": 11.0, "K*+_0(1430)": 45.2,
+               "f_2(1270)": 2.3, "f_0(1370)": 3.6, "NonReson": 11.5, "chi_c0": 1.04}
+B0_TABLE = pathlib.Path(__file__).resolve().parents[1] / "tables" / "b0.npz"
+needs_b0_table = pytest.mark.skipif(not B0_TABLE.exists(), reason="b0 table not present")
+
+
+def _babar(name):
+    m, ph, mb, phb = BABAR_B0[name]
+    return m * np.exp(1j * np.radians(ph)), mb * np.exp(1j * np.radians(phb))
+
+
+def test_b0_model_follows_babar_2009():
+    m = CHANNELS["b0"].model
+    assert set(m.component_names) == set(BABAR_B0)          # no omega(782)
+    assert m.mass_width_overrides["f_0(1370)"][:2] == (1.471, 0.097)      # their fX(1300)
+    assert m.barrier_radii["Parent"] == 2.0 and m.barrier_radii["Kstar"] == 3.6
+    assert m.lineshapes["K*+_0(1430)"] == "LASS" and m.lineshapes["f_0(980)"] == "Flatte"
+
+
+@pytest.mark.parametrize("name", sorted(BABAR_B0))
+def test_b0_cbar_over_c_is_babars(name):
+    """(q/p) cbar / c is free of normalization and sign conventions: it must equal
+    BaBar's cbar / c (whose cbar includes q/p) exactly."""
+    ch = CHANNELS["b0"]
+    c = ch.coefficients[name]
+    c_b, cbar_b = _babar(name)
+    assert ch.mixing.qp * c.c_bar / c.c == pytest.approx(cbar_b / c_b, rel=1e-12)
+
+
+def test_b0_relative_phases_are_babars_up_to_the_helicity_signs():
+    from tdalitz.channels import HELICITY_SIGN_B0
+    ch = CHANNELS["b0"]
+    ref = "f_0(980)"
+    for name in BABAR_B0:
+        flip = HELICITY_SIGN_B0[name] * HELICITY_SIGN_B0[ref]
+        ours = ch.coefficients[name].c / ch.coefficients[ref].c
+        theirs = _babar(name)[0] / _babar(ref)[0]
+        assert ours / abs(ours) == pytest.approx(flip * theirs / abs(theirs), abs=1e-12)
+
+
+def test_b0_fit_fractions_are_babars():
+    ch = CHANNELS["b0"]
+    w = {n: abs(c.c) ** 2 + abs(c.c_bar) ** 2 for n, c in ch.coefficients.items()}
+    total, ff_total = sum(w.values()), sum(BABAR_B0_FF.values())
+    for n in BABAR_B0:
+        assert w[n] / total == pytest.approx(BABAR_B0_FF[n] / ff_total, rel=1e-12)
+
+
+def test_b0_reproduces_babar_quasi_two_body_parameters():
+    """BaBar Table V, Solution I, from the coefficients alone."""
+    ch = CHANNELS["b0"]
+
+    def c_cbar(n):
+        c = ch.coefficients[n]
+        return c.c, ch.mixing.qp * c.c_bar                   # BaBar's cbar includes q/p
+
+    c, cb = c_cbar("K*+(892)")
+    assert (abs(cb) ** 2 - abs(c) ** 2) / (abs(cb) ** 2 + abs(c) ** 2) == pytest.approx(-0.21, abs=0.01)
+    c, cb = c_cbar("f_0(980)")
+    assert (abs(c) ** 2 - abs(cb) ** 2) / (abs(c) ** 2 + abs(cb) ** 2) == pytest.approx(0.08, abs=0.01)
+    assert np.degrees(0.5 * np.angle(c * np.conj(cb))) == pytest.approx(36.0, abs=1.5)
+    c, cb = c_cbar("rho0(770)")
+    assert np.degrees(0.5 * np.angle(c * np.conj(cb))) == pytest.approx(10.2, abs=1.5)
+
+
+def _b0_helicity_cosines(table):
+    """cos of BaBar's helicity angle, between the bachelor (p) and the resonance
+    daughter q: pi+ for K*+ (KS pi+), pi- for the pi+ pi- resonances
+    (arXiv:0905.3615, Sec. II).  Daughters are (KS, pi+, pi-)."""
+    fs = table.final_state
+    M = fs.parent
+    m1, m2, m3 = fs.daughters
+    s12, s13 = table.s12, table.s13
+    s23 = fs.s23(s12, s13)
+
+    def cos_between(s_pair, ma, mb, mc, s_ac):    # angle(a, c) in the (ab) frame
+        r = np.sqrt(s_pair)
+        ea, ec = (s_pair + ma**2 - mb**2) / (2 * r), (M**2 - s_pair - mc**2) / (2 * r)
+        pa, pc = np.sqrt(np.maximum(ea**2 - ma**2, 0)), np.sqrt(np.maximum(ec**2 - mc**2, 0))
+        return (ma**2 + mc**2 + 2 * ea * ec - s_ac) / (2 * pa * pc)
+
+    return ({"K*+(892)": cos_between(s12, m2, m1, m3, s23),      # pi+ vs bachelor pi- in (KS pi+)
+             "rho0(770)": cos_between(s23, m3, m2, m1, s13),     # pi- vs bachelor KS in (pi+ pi-)
+             "f_2(1270)": cos_between(s23, m3, m2, m1, s13)},
+            {"K*+(892)": s12, "rho0(770)": s23, "f_2(1270)": s23})
+
+
+@needs_b0_table
+def test_b0_helicity_signs_match_the_table():
+    """Sign of each Laura++ P- and D-wave component relative to BaBar's angular
+    factor (T_1 = -4 p.q, T_2 = (8/3)[3 (p.q)^2 - |p|^2 |q|^2]), measured below
+    the resonance peak where the Breit-Wigner is nearly real and positive."""
+    from tdalitz import AmplitudeTable
+    from tdalitz.channels import HELICITY_SIGN_B0
+    table = AmplitudeTable.load(B0_TABLE)
+    cos, pair_s = _b0_helicity_cosines(table)
+    below = {"K*+(892)": (0.70, 0.84), "rho0(770)": (0.50, 0.66), "f_2(1270)": (0.95, 1.12)}
+    for name, (lo, hi) in below.items():
+        m = np.sqrt(pair_s[name])
+        x = cos[name]
+        babar = -x if name != "f_2(1270)" else 3 * x ** 2 - 1
+        sel = (m > lo) & (m < hi) & (np.abs(babar) > 0.3)
+        r = table.amp[sel, table.index(name)] / babar[sel]
+        assert np.all(np.sign(r.real) == HELICITY_SIGN_B0[name]), name

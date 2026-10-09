@@ -47,8 +47,8 @@ TABLES = REPO / "tables"
 DESCRIPTION = {
     "d0": "D0 -> KS pi+ pi-   6 components of the BaBar 2010 model; SM charm mixing, "
           "CP conserved (the null case)",
-    "b0": "B0 -> KS pi+ pi-   9 components, BaBar/Belle content, strong phases assumed; "
-          "x = 0.77, q/p = exp(-2i beta), sin 2beta = 0.709",
+    "b0": "B0 -> KS pi+ pi-   8 components, BaBar 2009 amplitudes (direct and mixing-induced CPV); "
+          "x = 0.77, sin 2beta = 0.709",
     "bs": "Bs0 -> KS pi+ pi-  6 illustrative components; x = 27, y = 0.063, SM q/p = exp(0.037i)",
     "b0_3pi": "B0 -> pi+ pi- pi0  BaBar 2013 rho pi amplitudes, direct + mixing-induced CPV; "
               "coherent Delta t (B factory)",
