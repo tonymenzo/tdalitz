@@ -1,0 +1,2 @@
+# Generating events (scripts/generate.py and the tdalitz package)
+numpy>=1.22

@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Amplitude tables and generated events (tables are attached to the releases)
+*.npz
+
+# Laura++ byproducts
+integ.dat
+parLau.dat
+*.root

@@ -1,0 +1,9 @@
+# Tests, validation and figures, on top of requirements.txt
+-r requirements.txt
+numpy>=2.0        # the tests use numpy.trapezoid
+scipy             # tests, validation/compute_validation.py, validation/b0_3pi_amplitudes.py
+matplotlib        # validation/figures.ipynb
+pytest
+jupyter           # to run validation/figures.ipynb
+# Making amplitude tables (src/tdalitz/exporters, validation/export_tables.py)
+# also needs ROOT with PyROOT and a Laura++ build, which are not pip-installable.
