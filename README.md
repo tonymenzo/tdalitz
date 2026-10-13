@@ -30,6 +30,7 @@ Each run writes one `.npz` file holding both tags, with one entry per event in e
 | array | contents |
 | --- | --- |
 | `s12`, `s13` | $m^2(h\pi^+)$, $m^2(h\pi^-)$ in GeV², with $h = K_S^0$ ($\pi^0$ for `b0_3pi`) |
+| `s23` | $m^2(\pi^+\pi^-)$ in GeV² |
 | `tau` | decay time in lifetimes ($\Delta t$ for `b0_3pi`) |
 | `tag` | flavour tag as measured: +1 for $P^0$, −1 for $\bar P^0$ |
 | `true_tag` | production tag before mistag |
@@ -37,6 +38,7 @@ Each run writes one `.npz` file holding both tags, with one entry per event in e
 
 The file also stores the settings used: seed, mixing parameters, detector options and table provenance.
 The exact meaning of `tau` and `tag` in each mode is defined in [`docs/conventions.md`](docs/conventions.md).
+[`examples/plot_events.ipynb`](examples/plot_events.ipynb) shows how to read an event file and plot its Dalitz plot and time dependence.
 
 ## Model
 

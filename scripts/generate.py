@@ -13,6 +13,7 @@ are defined in src/tdalitz/channels.py.
 The output .npz holds both tags, one entry per event:
 
     s12, s13   m^2(h pi+), m^2(h pi-) in GeV^2, h = KS (or pi0 for b0_3pi)
+    s23        m^2(pi+ pi-) in GeV^2
     tau        decay time in lifetimes (smeared if --sigma-tau > 0); for the
                coherent channel b0_3pi, the decay-time difference Delta t of
                the B pair, which takes both signs
@@ -114,6 +115,8 @@ def main(argv=None):
         out,
         s12=np.concatenate([e.s12 for e in events]),
         s13=np.concatenate([e.s13 for e in events]),
+        s23=table.final_state.s23(np.concatenate([e.s12 for e in events]),
+                                  np.concatenate([e.s13 for e in events])),
         tau=np.concatenate([e.tau for e in events]),
         tag=np.concatenate([e.tag for e in events]),
         true_tag=true_tag,

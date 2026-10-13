@@ -72,6 +72,14 @@ def test_writes_both_tags(tmp_path, key):
     assert str(ev["channel"]) == key
 
 
+@pytest.mark.parametrize("key", KEYS)
+def test_writes_the_third_invariant(tmp_path, key):
+    """s23 is stored and satisfies s12 + s13 + s23 = M^2 + m1^2 + m2^2 + m3^2."""
+    ev = run(key, tmp_path, "--n-events", "200", "--seed", "5")
+    total = PARENT[key] ** 2 + sum(m ** 2 for m in DAUGHTERS[key])
+    np.testing.assert_allclose(ev["s12"] + ev["s13"] + ev["s23"], total, rtol=1e-12)
+
+
 def test_settings_are_recorded(tmp_path):
     ev = run("b0", tmp_path, "--n-events", "100", "--seed", "9",
              "--sigma-tau", "0.05", "--mistag", "0.2")
